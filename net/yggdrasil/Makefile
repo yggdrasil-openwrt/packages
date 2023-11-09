@@ -1,12 +1,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=yggdrasil
-PKG_VERSION:=0.4.7
+PKG_VERSION:=0.5.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/yggdrasil-network/yggdrasil-go/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=47429f75b87d9b2450108471991e84c90d748606642e8778e9f578485b05a56f
+PKG_HASH:=74cf3d4dc925ea424cb8ae5e171c64344d62dde16e23c42108ecd463d48d5277
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-go-$(PKG_VERSION)
 
 PKG_MAINTAINER:=William Fleurant <meshnet@protonmail.com>
@@ -33,7 +33,7 @@ define Package/yggdrasil
 	SUBMENU:=Routing and Redirection
 	TITLE:=Yggdrasil supports end-to-end encrypted IPv6 networks
 	URL:=https://yggdrasil-network.github.io/
-	DEPENDS:=$(GO_ARCH_DEPENDS) @IPV6 +kmod-tun +dkjson +libuci-lua
+	DEPENDS:=$(GO_ARCH_DEPENDS) @IPV6 +kmod-tun
 endef
 
 define Package/yggdrasil/description
@@ -46,14 +46,9 @@ define Package/yggdrasil/description
  interfaces simultaneously with much greater throughput.
 endef
 
-define Package/yggdrasil/conffiles
-/etc/config/yggdrasil
-endef
-
 define Package/yggdrasil/install
 	$(INSTALL_DIR) \
-		$(1)/etc/init.d \
-		$(1)/etc/uci-defaults \
+		$(1)/lib/netifd/proto \
 		$(1)/usr/sbin
 
 	$(INSTALL_BIN) \
@@ -65,16 +60,8 @@ define Package/yggdrasil/install
 		$(1)/usr/sbin
 
 	$(INSTALL_BIN) \
-		./files/ygguci \
-		$(1)/usr/sbin
-
-	$(INSTALL_BIN) \
-		./files/yggdrasil.defaults \
-		$(1)/etc/uci-defaults/yggdrasil
-
-	$(INSTALL_BIN) \
-		./files/yggdrasil.init \
-		$(1)/etc/init.d/yggdrasil
+		./files/yggdrasil.sh \
+		$(1)/lib/netifd/proto
 endef
 
 $(eval $(call GoBinPackage,yggdrasil))
