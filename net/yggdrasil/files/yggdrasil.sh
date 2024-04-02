@@ -118,23 +118,23 @@ proto_yggdrasil_allocate_listen_addresses() {
 
 	# Add new address for each previously unspecified protocol
 	for protocol in "tls" "quic"; do
-		if ! echo "$protocols" | grep "$protocol" &>/dev/null; then
+		if echo "$protocols" | grep -q --invert-match "$protocol"; then
 			# By default linux dynamically alocates ports in the range 32768..60999
 			# `sysctl net.ipv4.ip_local_port_range`
-			random_port=$(( ($RANDOM + $RANDOM) % 22767 + 10000 ))
+			random_port=$(( (RANDOM + RANDOM) % 22767 + 10000 ))
 			proto_yggdrasil_add_string "${protocol}://127.0.0.1:${random_port}"
 		fi
 	done
 }
 
-proto_yggdrasil_generate_jumper_config() {
+proto_yggdrasil_print_jumper_config() {
 	local config="$1"
 	local ygg_sock="$2"
 	local ygg_cfg="$3"
 
 	# Autofill Yggdrasil listeners
 	config_get is_autofill_listeners "$config" "jumper_autofill_listen_addresses"
-	if [ "$is_autofill_listeners" == "1" ]; then
+	if [ "$is_autofill_listeners" = "1" ]; then
 		echo "yggdrasil_listen = ["
 		_print_address() {
 			echo "\"${1}\","
@@ -237,7 +237,7 @@ EOF
 	# If needed, add new address for each previously unspecified protocol
 	config_get is_jumper_enabled "$config" "jumper_enable"
 	config_get allocate_listen_addresses "$config" "allocate_listen_addresses"
-	if [ "$is_jumper_enabled" == "1" ] && [ "$allocate_listen_addresses" == "1" ]; then
+	if [ "$is_jumper_enabled" = "1" ] && [ "$allocate_listen_addresses" = "1" ]; then
 		proto_yggdrasil_allocate_listen_addresses "$config"
 	fi
 
@@ -259,9 +259,9 @@ EOF
 
 	# Start jumper if needed
 	config_get is_jumper_enabled "$config" "jumper_enable"
-	if [ "$is_jumper_enabled" == "1" ] && [ -f /usr/sbin/yggdrasil-jumper ]; then
+	if [ "$is_jumper_enabled" = "1" ] && [ -f /usr/sbin/yggdrasil-jumper ]; then
 		jumper_cfg="${ygg_dir}/${config}-jumper.conf"
-		proto_yggdrasil_generate_jumper_config "$config" "$ygg_sock" "$ygg_cfg" > "$jumper_cfg"
+		proto_yggdrasil_print_jumper_config "$config" "$ygg_sock" "$ygg_cfg" > "$jumper_cfg"
 
 		config_get jumper_loglevel "$config" "jumper_loglevel"
 		sh -c "sleep 2 && exec /usr/sbin/yggdrasil-jumper --loglevel \"${jumper_loglevel:-info}\" --config \"$jumper_cfg\" 2&>1 | logger -t \"${config}-jumper\"" &
